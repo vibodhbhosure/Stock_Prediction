@@ -7,53 +7,55 @@ import streamlit as st
 from sklearn.preprocessing import MinMaxScaler
 import yfinance as yf
 
-st.title('Stock Trend Prediction')
+st.title('Stock Trend Prediction') #Title for streamlit page
 
-user_input = st.text_input("Enter Stock Ticker", "AAPL")
+user_input = st.text_input("Enter Stock Ticker", "AAPL") #take input in text-box
 
 #start = '2010-01-01'
-start = str(yf.Ticker(user_input).history(period='max').reset_index()['Date'][0])[:10]
+start = str(yf.Ticker(user_input).history(period='max').reset_index()['Date'][0])[:10] #Extract start date of the stock from Yahoo
 #end = '2014-02-16'
-end = datetime.today().strftime("%Y-%m-%d")
+end = datetime.today().strftime("%Y-%m-%d") #Today's date as End date
 
-df = data.DataReader(user_input, 'yahoo', start, end)
-df = df.reset_index()
+df = data.DataReader(user_input, 'yahoo', start, end) #Take data of stock from yahoo in DataFrame
+df = df.reset_index() #Reset Index of Dataframe to remove date as index and put 1,2,3,4...
 
-st.subheader(str(start)+" To "+str(end))
-st.write(df.describe())
+st.subheader(str(start)+" To "+str(end)) #Put subheading as Start - End
+st.write(df.describe()) #Put the table of Data Frame in StreamLit
 
-st.subheader('Closing Price vs Time Chart')
-fig = plt.figure(figsize=(12, 6))
-plt.plot(df.Close)
-st.pyplot(fig)
+st.subheader('Closing Price vs Time Chart') #Sub-Heading
+fig = plt.figure(figsize=(12,6)) #create and set dimensions for the figure
+plt.plot(df.Close) #plot data frame close points
+st.pyplot(fig) #display figure on streamlit
 
-st.subheader('Closing Price vs Time Chart with 100 MA')
-ma100 = df.Close.rolling(100).mean()
-fig = plt.figure(figsize=(12, 6))
-plt.plot(ma100, 'r')
-plt.plot(df.Close)
-st.pyplot(fig)
+st.subheader('Closing Price vs Time Chart with 100 MA') #Sub-Heading
+ma100 = df.Close.rolling(100).mean() #For Rolling window calculation - it will give mean at every interval of 100. If not rolling then it will give only one mean
+fig = plt.figure(figsize=(12, 6)) #create and set dimensions for the figure
+plt.plot(ma100, 'r') #plot MA100 graph
+plt.plot(df.Close) #plot data frame close points
+st.pyplot(fig) #display figure on streamlit
 
 st.subheader('Closing Price vs Time Chart with 100 MA & 200 MA')
-ma100 = df.Close.rolling(100).mean()
-ma200 = df.Close.rolling(200).mean()
-fig = plt.figure(figsize=(12, 6))
-plt.plot(ma100, 'r')
-plt.plot(ma200, 'g')
-plt.plot(df.Close)
-st.pyplot(fig)
+ma100 = df.Close.rolling(100).mean() #For Rolling window calculation - it will give mean at every interval of 100. If not rolling then it will give only one mean
+ma200 = df.Close.rolling(200).mean() #For Rolling window calculation - it will give mean at every interval of 200. If not rolling then it will give only one mean
+fig = plt.figure(figsize=(12, 6)) #create and set dimensions for the figure
+plt.plot(ma100, 'r')  #plot MA100 graph
+plt.plot(ma200, 'g')  #plot MA200 graph
+plt.plot(df.Close) #plot data frame close points
+st.pyplot(fig) #display figure on streamlit
 
-df1 = df.reset_index()['Close']
+df1 = df.reset_index()['Close'] #create a new dataframe with the indexes reset to number other than date
 
 #Split Data into Training and Testing
-scaler = MinMaxScaler(feature_range=(0, 1))
-df1 = scaler.fit_transform(numpy.array(df1).reshape(-1, 1))
-train_data, test_data = df1[0:int(len(df1)*0.70), :], df1[int(len(df1)*0.70):len(df1), :1]
+#Model prediction requires data to be in range 0 - 1
+#MinMax scaler converts data in the range of 0 to 1
+scaler = MinMaxScaler(feature_range=(0, 1)) #define function to convert data in 0 and 1
+df1 = scaler.fit_transform(numpy.array(df1).reshape(-1, 1)) # Convert the data of the dataframe in 0-1
+train_data, test_data = df1[0:int(len(df1)*0.70), :], df1[int(len(df1)*0.70):len(df1), :1] # Divide data into training and Testing in ratio 70:30
 
 #Load my model
-model = load_model('new_model.h5')
+model = load_model('new_model.h5') #Load previously trained model
 
-
+#Function to create dataset
 def create_dataset(dataset, time_step=1):
     dataX,dataY = [], []
     for i in range(len(dataset)-time_step-1):
@@ -62,15 +64,17 @@ def create_dataset(dataset, time_step=1):
         dataY.append(dataset[i+time_step,0])
     return numpy.array(dataX), numpy.array(dataY)
 
+#Predict data 101th day data, taking previous 100 days into consideration
+
 time_step=100
 x_train, y_train = create_dataset(train_data, time_step)
 x_test, y_test = create_dataset(test_data, time_step)
-x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], 1)
-x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], 1)
-train_predict = model.predict(x_train)
-test_predict = model.predict(x_test)
-train_predict = scaler.inverse_transform(train_predict)
-test_predict = scaler.inverse_transform(test_predict)
+x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], 1) #reshape in 1D array
+x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], 1) #reshape in 1D array
+train_predict = model.predict(x_train) #Predict x_train with the trained model
+test_predict = model.predict(x_test) #Predict x_test with trained model
+train_predict = scaler.inverse_transform(train_predict) #Convert the 0-1 data back to original form
+test_predict = scaler.inverse_transform(test_predict) #Convet 0-1 data back to original form
 
 loopback = 100
 st.subheader('Testing of Prediction')
