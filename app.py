@@ -88,7 +88,7 @@ testPredictPlot[len(train_predict)+(loopback*2)+1:len(df1)-1, :] = test_predict
 plt.plot(scaler.inverse_transform(df1))
 plt.plot(trainPredictPlot)
 plt.plot(testPredictPlot)
-plt.show()
+#plt.show()
 st.pyplot(fig6)
 
 
