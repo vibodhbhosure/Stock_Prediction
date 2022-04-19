@@ -49,7 +49,7 @@ df1 = df.reset_index()['Close'] #create a new dataframe with the indexes reset t
 #Model prediction requires data to be in range 0 - 1
 #MinMax scaler converts data in the range of 0 to 1
 scaler = MinMaxScaler(feature_range=(0, 1)) #define function to convert data in 0 and 1
-df1 = scaler.fit_transform(numpy.array(df1).reshape(-1, 1)) # Convert the data of the dataframe in 0-1
+df1 = scaler.fit_transform(numpy.array(df1).reshape(-1, 1)) # Convert the data of the dataframe in 0-1  ( -1 states dimension unknown) - Convert to array of list like [[1],[2],[3]]
 train_data, test_data = df1[0:int(len(df1)*0.70), :], df1[int(len(df1)*0.70):len(df1), :1] # Divide data into training and Testing in ratio 70:30
 
 #Load my model
@@ -77,10 +77,10 @@ train_predict = scaler.inverse_transform(train_predict) #Convert the 0-1 data ba
 test_predict = scaler.inverse_transform(test_predict) #Convet 0-1 data back to original form
 
 loopback = 100
-st.subheader('Testing of Prediction')
-fig6 = plt.figure(figsize=(12, 6))
-trainPredictPlot = numpy.empty_like(df1)
-trainPredictPlot[:, :] = numpy.nan
+st.subheader('Testing of Prediction')#Title
+fig6 = plt.figure(figsize=(12, 6))#Create plot for graph
+trainPredictPlot = numpy.empty_like(df1) #create a array with same shape and size of df1
+trainPredictPlot[:, :] = numpy.nan #NaN - Not a number / :,: - select all for both dimension
 trainPredictPlot[loopback:len(train_predict)+loopback, :] = train_predict
 testPredictPlot = numpy.empty_like(df1)
 testPredictPlot[:, :] = numpy.nan
@@ -92,7 +92,7 @@ plt.plot(testPredictPlot)
 st.pyplot(fig6)
 
 
-x_input=test_data[len(test_data)-100:].reshape(1,-1)
+x_input=test_data[len(test_data)-100:].reshape(1,-1) #store in x_input with 2nd dimension not known
 temp_input=list(x_input)
 temp_input=temp_input[0].tolist()
 
@@ -106,12 +106,12 @@ while (i < npt):
     if (len(temp_input) > 100):
         # print(temp_input)
         x_input = numpy.array(temp_input[1:])
-        print("{} day input {}".format(i, x_input))
-        x_input = x_input.reshape(1, -1)
-        x_input = x_input.reshape((1, n_steps, 1))
+        #print("{} day input {}".format(i, x_input))
+        x_input = x_input.reshape(1, -1) #convert to 2d array
+        x_input = x_input.reshape((1, n_steps, 1)) #convert to 3d array
         # print(x_input)
-        yhat = model.predict(x_input, verbose=0)
-        print("{} day output {}".format(i, yhat))
+        yhat = model.predict(x_input, verbose=0) #predict model
+        #print("{} day output {}".format(i, yhat))
         temp_input.extend(yhat[0].tolist())
         temp_input = temp_input[1:]
         # print(temp_input)
@@ -126,8 +126,8 @@ while (i < npt):
         lst_output.extend(yhat.tolist())
         i = i + 1
 
-day_new = numpy.arange(1,101)
-day_pred = numpy.arange(101,101+npt)
+day_new = numpy.arange(1,101) #create a array with numbers from 1 to 100
+day_pred = numpy.arange(101,101+npt) #create a array with numbers from 101 to numbers of day
 
 st.subheader('Limited Prediction')
 fig7 = plt.figure(figsize=(12, 6))
@@ -145,8 +145,6 @@ st.subheader('Overall Prediction')
 fig8 = plt.figure(figsize=(12, 6))
 df3 = df1.tolist()
 df3.extend(lst_output)
-#plt.plot(day_new,scaler.inverse_transform(df1[len(df1)-100:]))
-#plt.plot(day_pred,scaler.inverse_transform(lst_output))
 df3 = df1.tolist()
 df3.extend(lst_output)
 plt.plot(df3[:],'g')
